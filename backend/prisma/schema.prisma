@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  name                String
+  phone               String               @unique
+  birthDate           String?
+  gender              String?
+  email               String?              @unique
+  password            String?
+  isGuest             Boolean              @default(false)
+  privacyConsent      Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  consultations       Consultation[]
+  consultationRecords ConsultationRecord[]
+}
+
+model ConsultationRecord {
+  id                         String         @id @default(uuid())
+  userId                     String
+  user                       User           @relation(fields: [userId], references: [id])
+  sourceType                 String
+  status                     String         @default("collecting")
+  customerName               String
+  customerPhone              String?
+  customerBirthDate          String?
+  customerConfirmed          Boolean        @default(false)
+  birthDateConfirmed         Boolean        @default(false)
+  recentMedicalHistory       String?
+  currentMedicationStatus    String?
+  currentInsuranceSummary    String?
+  monthlyPremium             String?
+  interestAreas              String[]
+  visitRegion                String?
+  visitAddress               String?
+  visitAddressType           String?
+  preferredVisitYear         Int?
+  preferredVisitMonth        Int?
+  preferredVisitDay          Int?
+  preferredVisitTime         String?
+  preferredVisitTimePeriod   String?
+  notes                      String?
+  extractedSnapshot          Json?
+  consultations              Consultation[]
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+}
+
+model Consultation {
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id])
+  recordId       String?
+  record         ConsultationRecord? @relation(fields: [recordId], references: [id])
+  type           String             // 'chat' | 'voice'
+  status         String             @default("active")
+  summary        Json?
+  messages       Json?
+  healthCheck    Json?
+  region         String?
+  interestAreas  String[]
+  monthlyPremium String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}

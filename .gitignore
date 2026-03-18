@@ -1,0 +1,30 @@
+# Node
+**/node_modules
+**/dist
+**/dist-ssr
+**/*.log
+
+# Environment
+**/.env
+**/*.local
+
+# Prisma
+**/generated/prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# OS/IDE
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Agent
+.gemini
+_agent*
+.agents

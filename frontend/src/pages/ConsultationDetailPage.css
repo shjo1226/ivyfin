@@ -1,0 +1,252 @@
+.detail-container {
+  max-width: 900px;
+  margin: 100px auto 40px;
+  padding: 0 20px;
+}
+
+.detail-header {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.header-left h1 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.customer-summary {
+  margin-bottom: 40px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summary-value {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.record-detail-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 24px;
+}
+
+.section-title {
+  font-size: 0.9rem;
+  color: var(--accent-color);
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: block;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.interest-tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.interest-tag {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #818cf8;
+}
+
+.visit-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.notes-content {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid var(--accent-color);
+}
+
+.session-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.session-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.session-header {
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.session-title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-date {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.transcript-area {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.message {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.message-assistant {
+  align-self: flex-start;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+}
+
+.message-user {
+  align-self: flex-end;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-bottom-right-radius: 4px;
+}
+
+.message-role {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: block;
+  opacity: 0.7;
+}
+
+.voice-player-mock {
+  margin: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.play-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--accent-color);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.play-progress {
+  flex-grow: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  position: relative;
+}
+
+.play-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 45%;
+  background: var(--accent-color);
+  border-radius: 2px;
+}
+
+.play-time {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  min-width: 40px;
+}
+
+@media (max-width: 768px) {
+  .detail-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
