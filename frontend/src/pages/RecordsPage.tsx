@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './RecordsPage.css';
 
 interface ConsultationRecord {
@@ -24,14 +25,28 @@ interface ConsultationRecord {
 
 const RecordsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [records, setRecords] = useState<ConsultationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user?.id || !token) {
+      setLoading(false);
+      setError('로그인 후 본인 상담 내역을 확인할 수 있습니다.');
+      return;
+    }
+
     const fetchRecords = async () => {
       try {
-        const response = await fetch('http://localhost:3005/api/consultations/records');
+        const response = await fetch(
+          `http://localhost:3005/api/consultations/users/${user.id}/records`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
         if (!response.ok) {
           throw new Error('데이터를 불러오는데 실패했습니다.');
         }
@@ -45,7 +60,7 @@ const RecordsPage: React.FC = () => {
     };
 
     fetchRecords();
-  }, []);
+  }, [token, user?.id]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -89,8 +104,8 @@ const RecordsPage: React.FC = () => {
   return (
     <div className="records-container">
       <header className="records-header">
-        <h1>방문 상담 예약 내역</h1>
-        <p>전체 상담 기록 및 방문 예약 현황을 한눈에 확인하세요.</p>
+        <h1>내 방문 상담 내역</h1>
+        <p>접수한 방문 상담 예약과 진행 현황을 확인하세요.</p>
       </header>
 
       <div className="records-grid">

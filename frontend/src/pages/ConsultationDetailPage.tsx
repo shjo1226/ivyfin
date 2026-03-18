@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import './ConsultationDetailPage.css';
 
 interface Consultation {
@@ -34,6 +34,7 @@ interface ConsultationRecord {
 const ConsultationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [record, setRecord] = useState<ConsultationRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,10 @@ const ConsultationDetailPage: React.FC = () => {
     return `${record.preferredVisitYear}년 ${record.preferredVisitMonth}월 ${record.preferredVisitDay}일 ${record.preferredVisitTimePeriod || ''} ${record.preferredVisitTime || ''}`;
   };
 
+  const backTarget = location.pathname.startsWith('/admin/')
+    ? '/admin/consultations'
+    : '/records';
+
   if (loading) return <div className="detail-container">로딩 중...</div>;
   if (error || !record) return <div className="detail-container">오류: {error || '기록을 찾을 수 없습니다.'}</div>;
 
@@ -80,7 +85,7 @@ const ConsultationDetailPage: React.FC = () => {
     <div className="detail-container">
       <header className="detail-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/records')}>
+          <button className="back-btn" onClick={() => navigate(backTarget)}>
             ← 목록으로
           </button>
           <h1>상담 상세 내역</h1>

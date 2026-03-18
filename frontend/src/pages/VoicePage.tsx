@@ -32,6 +32,29 @@ const VoicePage: React.FC = () => {
   const mutedMonitorGainRef = useRef<GainNode | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const playbackCursorRef = useRef(0);
+  const activePlaybackSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const isComposingRef = useRef(false);
+  const lastSentTextRef = useRef('');
+  const lastSentAtRef = useRef(0);
+
+  const appendTranscriptChunk = useCallback((currentText: string, chunk: string) => {
+    const base = currentText.trim();
+    const next = chunk.trim();
+
+    if (!base) {
+      return next;
+    }
+
+    if (!next) {
+      return base;
+    }
+
+    if (/^[,.:;!?)]/.test(next) || /[\s(]$/.test(base)) {
+      return `${base}${next}`;
+    }
+
+    return `${base} ${next}`;
+  }, []);
 
   const playAudio = useCallback((base64Data: string) => {
     try {
@@ -65,6 +88,12 @@ const VoicePage: React.FC = () => {
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
+      activePlaybackSourcesRef.current.push(source);
+      source.onended = () => {
+        activePlaybackSourcesRef.current = activePlaybackSourcesRef.current.filter(
+          (currentSource) => currentSource !== source,
+        );
+      };
 
       const now = ctx.currentTime;
       const startAt = Math.max(now, playbackCursorRef.current);
@@ -166,27 +195,54 @@ const VoicePage: React.FC = () => {
       }, 2000);
     });
 
-    socket.on('transcript', (data: { role: 'user' | 'assistant'; text: string }) => {
+    socket.on('interrupted', () => {
+      if (transcriptTimeoutRef.current) {
+        clearTimeout(transcriptTimeoutRef.current);
+        transcriptTimeoutRef.current = null;
+      }
+
+      activePlaybackSourcesRef.current.forEach((source) => {
+        try {
+          source.stop();
+        } catch {
+          return;
+        }
+      });
+      activePlaybackSourcesRef.current = [];
+
+      if (outputAudioContextRef.current) {
+        playbackCursorRef.current = outputAudioContextRef.current.currentTime;
+      } else {
+        playbackCursorRef.current = 0;
+      }
+
+      setIsAiSpeaking(false);
+    });
+
+    socket.on('transcript', (data: { role: 'user' | 'assistant'; text: string; replace?: boolean }) => {
       const normalized = data.text?.trim();
       if (!normalized) return;
 
       setMessages(prev => {
         const last = prev[prev.length - 1];
         if (last && last.role === data.role) {
-          if (last.text === normalized) {
-            return prev;
-          }
-
-          if (normalized.startsWith(last.text) || last.text.startsWith(normalized)) {
+          if (data.replace) {
             return [
               ...prev.slice(0, -1),
               { ...last, text: normalized },
             ];
           }
 
+          if (data.role === 'assistant') {
+            return [
+              ...prev.slice(0, -1),
+              { ...last, text: appendTranscriptChunk(last.text, data.text) },
+            ];
+          }
+
           return [
             ...prev.slice(0, -1),
-            { ...last, text: `${last.text} ${normalized}`.trim() },
+            { ...last, text: normalized },
           ];
         }
 
@@ -196,6 +252,11 @@ const VoicePage: React.FC = () => {
 
     socket.on('end-call-initiated', () => {
       setEndCallMessage('상담사가 통화를 종료하려고 합니다...');
+    });
+
+    socket.on('end-call-cancelled', () => {
+      setEndCallMessage('');
+      setCallStatus('통화 중');
     });
 
     socket.on('call-ended', () => {
@@ -215,7 +276,7 @@ const VoicePage: React.FC = () => {
       cleanupCall();
       socket.disconnect();
     };
-  }, [token, startMicrophone, playAudio, navigate]);
+  }, [token, startMicrophone, playAudio, navigate, appendTranscriptChunk]);
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -242,18 +303,40 @@ const VoicePage: React.FC = () => {
       inputAudioContextRef.current.close().catch(() => undefined);
       inputAudioContextRef.current = null;
     }
+    activePlaybackSourcesRef.current.forEach((source) => {
+      try {
+        source.stop();
+      } catch {
+        return;
+      }
+    });
     if (outputAudioContextRef.current) {
       outputAudioContextRef.current.close().catch(() => undefined);
       outputAudioContextRef.current = null;
     }
+    activePlaybackSourcesRef.current = [];
     playbackCursorRef.current = 0;
   };
 
   const sendTextInput = () => {
     const value = textInput.trim();
     if (!value || !socketRef.current || !isConnected || !isCallActive) return;
+    if (isComposingRef.current) return;
+
+    const now = Date.now();
+    const isImmediateDuplicate =
+      now - lastSentAtRef.current < 1000 &&
+      (value === lastSentTextRef.current ||
+        lastSentTextRef.current.endsWith(value));
+
+    if (isImmediateDuplicate) {
+      setTextInput('');
+      return;
+    }
 
     socketRef.current.emit('text-input', { text: value });
+    lastSentTextRef.current = value;
+    lastSentAtRef.current = now;
     setTextInput('');
   };
 
@@ -334,7 +417,17 @@ const VoicePage: React.FC = () => {
                 className="voice-text-input"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
+                onCompositionStart={() => {
+                  isComposingRef.current = true;
+                }}
+                onCompositionEnd={(e) => {
+                  isComposingRef.current = false;
+                  setTextInput(e.currentTarget.value);
+                }}
                 onKeyDown={(e) => {
+                  if (e.nativeEvent.isComposing || isComposingRef.current) {
+                    return;
+                  }
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     sendTextInput();

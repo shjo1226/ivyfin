@@ -13,6 +13,7 @@ import { VOICE_SYSTEM_PROMPT } from '../common/prompts/voice-consultation-prompt
 export interface VoiceTranscriptEvent {
   role: 'user' | 'assistant';
   text: string;
+  replace?: boolean;
 }
 
 @Injectable()
@@ -57,11 +58,19 @@ export class VoiceService {
       .replace(/\{생년월일\}/g, this.formatBirthDate(birthDate));
   }
 
+  private sanitizeTranscriptText(text: string): string {
+    return text
+      .replace(/\b(?:filtration_duration|latency|timestamp|confidence|segment_duration)[\w.:/-]*\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   async createLiveSession(
     customerName: string,
     birthDate: string | null | undefined,
     onAudio: (data: string) => void,
     onTranscript: (event: VoiceTranscriptEvent) => void,
+    onInterrupted: () => void,
     onToolCall: (functionCalls: any[]) => void,
     onError: (error: any) => void,
     onClose: () => void,
@@ -69,19 +78,25 @@ export class VoiceService {
     const systemPrompt = this.buildSystemPrompt(customerName, birthDate);
     const speechConfig = this.voiceName
       ? {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: this.voiceName,
-            },
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName: this.voiceName,
           },
-        }
+        },
+      }
       : undefined;
+
+    this.logger.log(`Connecting Gemini Live with model: ${this.modelName}`);
 
     const session = await this.genAI.live.connect({
       model: this.modelName,
       callbacks: {
         onmessage: (message: any) => {
           const content = message.serverContent;
+
+          if (content?.interrupted) {
+            onInterrupted();
+          }
 
           if (content?.modelTurn?.parts) {
             for (const part of content.modelTurn.parts) {
@@ -92,17 +107,29 @@ export class VoiceService {
           }
 
           if (content?.inputTranscription?.text) {
-            onTranscript({
-              role: 'user',
-              text: content.inputTranscription.text,
-            });
+            const sanitizedText = this.sanitizeTranscriptText(
+              content.inputTranscription.text,
+            );
+            if (sanitizedText) {
+              onTranscript({
+                role: 'user',
+                text: sanitizedText,
+                replace: true,
+              });
+            }
           }
 
           if (content?.outputTranscription?.text) {
-            onTranscript({
-              role: 'assistant',
-              text: content.outputTranscription.text,
-            });
+            const sanitizedText = this.sanitizeTranscriptText(
+              content.outputTranscription.text,
+            );
+            if (sanitizedText) {
+              onTranscript({
+                role: 'assistant',
+                text: sanitizedText,
+                replace: false,
+              });
+            }
           }
 
           if (message.toolCall) {
@@ -113,11 +140,14 @@ export class VoiceService {
           }
         },
         onerror: (e: any) => {
-          this.logger.error('Gemini Live session error:', e);
+          this.logger.error(
+            `Gemini Live session error (${this.modelName}):`,
+            e,
+          );
           onError(e);
         },
         onclose: () => {
-          this.logger.log('Gemini Live session closed');
+          this.logger.log(`Gemini Live session closed (${this.modelName})`);
           onClose();
         },
       },

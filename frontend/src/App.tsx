@@ -11,6 +11,7 @@ import VoicePage from './pages/VoicePage';
 import ProfilePage from './pages/ProfilePage';
 import RecordsPage from './pages/RecordsPage';
 import ConsultationDetailPage from './pages/ConsultationDetailPage';
+import AdminRecordsPage from './pages/AdminRecordsPage';
 
 function App() {
   return (
@@ -46,8 +47,24 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/records" element={<RecordsPage />} />
-          <Route path="/records/:id" element={<ConsultationDetailPage />} />
+          <Route
+            path="/records"
+            element={
+              <ProtectedRoute>
+                <RecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/records/:id"
+            element={
+              <ProtectedRoute>
+                <ConsultationDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/admin/consultations" element={<AdminRecordsPage />} />
+          <Route path="/admin/consultations/:id" element={<ConsultationDetailPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

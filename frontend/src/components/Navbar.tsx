@@ -25,6 +25,12 @@ const Navbar: React.FC = () => {
         <div className="navbar-actions">
           {isAuthenticated ? (
             <>
+              <Link to="/records" className="navbar-link">
+                내 상담내역
+              </Link>
+              <Link to="/admin/consultations" className="navbar-link admin-link">
+                관리자 예약현황
+              </Link>
               <Link to="/profile" className="navbar-user">
                 {user?.name}님
               </Link>

@@ -69,6 +69,69 @@ export class ConsultationService {
     });
   }
 
+  async exportRecordsCsv() {
+    const records = await this.findRecords();
+    const headers = [
+      '접수ID',
+      '상태',
+      '상담유형',
+      '고객명',
+      '연락처',
+      '생년월일',
+      '관심분야',
+      '최근 병력',
+      '복용 약',
+      '현재 보험 요약',
+      '월 보험료',
+      '방문 지역',
+      '방문 주소',
+      '주소 구분',
+      '희망 연도',
+      '희망 월',
+      '희망 일',
+      '희망 시간대',
+      '희망 시간',
+      '메모',
+      '생성일시',
+      '수정일시',
+    ];
+
+    const escapeCsv = (value: unknown) => {
+      const raw = value == null ? '' : String(value);
+      return `"${raw.replace(/"/g, '""')}"`;
+    };
+
+    const rows = records.map((record) => [
+      record.id,
+      record.status,
+      record.sourceType,
+      record.customerName,
+      record.customerPhone,
+      record.customerBirthDate,
+      record.interestAreas?.join(', '),
+      record.recentMedicalHistory,
+      record.currentMedicationStatus,
+      record.currentInsuranceSummary,
+      record.monthlyPremium,
+      record.visitRegion,
+      record.visitAddress,
+      record.visitAddressType,
+      record.preferredVisitYear,
+      record.preferredVisitMonth,
+      record.preferredVisitDay,
+      record.preferredVisitTimePeriod,
+      record.preferredVisitTime,
+      record.notes,
+      record.createdAt.toISOString(),
+      record.updatedAt.toISOString(),
+    ]);
+
+    return [
+      '\uFEFF' + headers.map(escapeCsv).join(','),
+      ...rows.map((row) => row.map(escapeCsv).join(',')),
+    ].join('\n');
+  }
+
   async findRecordById(id: string) {
     return this.prisma.consultationRecord.findUnique({
       where: { id },
