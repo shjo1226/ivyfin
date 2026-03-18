@@ -40,7 +40,7 @@ const RecordsPage: React.FC = () => {
     const fetchRecords = async () => {
       try {
         const response = await fetch(
-          `http://localhost:3005/api/consultations/users/${user.id}/records`,
+          'http://localhost:3005/api/consultations/me/records',
           {
             headers: {
               Authorization: `Bearer ${token}`,

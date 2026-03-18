@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Request,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
 import { ConsultationService } from './consultation.service';
 
@@ -9,6 +17,18 @@ export class ConsultationController {
   @Get('records')
   async getRecords() {
     return this.consultationService.findRecords();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/records')
+  async getMyRecords(@Request() req: any) {
+    return this.consultationService.findRecordsByUserId(req.user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/records/:id')
+  async getMyRecordById(@Request() req: any, @Param('id') id: string) {
+    return this.consultationService.findRecordByIdAndUserId(id, req.user.id);
   }
 
   @Get('admin/records')

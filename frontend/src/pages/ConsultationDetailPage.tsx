@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './ConsultationDetailPage.css';
 
 interface Consultation {
@@ -35,6 +36,7 @@ const ConsultationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { token } = useAuth();
   const [record, setRecord] = useState<ConsultationRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,17 @@ const ConsultationDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await fetch(`http://localhost:3005/api/consultations/records/${id}`);
+        const isAdminView = location.pathname.startsWith('/admin/');
+        const endpoint = isAdminView
+          ? `http://localhost:3005/api/consultations/records/${id}`
+          : `http://localhost:3005/api/consultations/me/records/${id}`;
+        const response = await fetch(endpoint, {
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
+        });
         if (!response.ok) {
           throw new Error('데이터를 불러오는데 실패했습니다.');
         }
@@ -56,7 +68,7 @@ const ConsultationDetailPage: React.FC = () => {
     };
 
     fetchRecord();
-  }, [id]);
+  }, [id, location.pathname, token]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

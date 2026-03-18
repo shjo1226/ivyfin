@@ -155,6 +155,17 @@ export class ConsultationService {
     });
   }
 
+  async findRecordByIdAndUserId(id: string, userId: string) {
+    return this.prisma.consultationRecord.findFirst({
+      where: { id, userId },
+      include: {
+        consultations: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+  }
+
   async findRecordsByUserId(userId: string) {
     return this.prisma.consultationRecord.findMany({
       where: { userId },
