@@ -184,8 +184,11 @@ const AdminRecordsPage: React.FC = () => {
                   onClick={() => navigate(`/admin/consultations/${record.id}`)}
                   className="clickable-row"
                 >
-                  <td>{record.status}</td>
-                  <td>{record.sourceType}</td>
+                  <td>
+                    {record.status === 'submitted' ? '접수완료' : 
+                     record.status === 'interrupted' ? '상담중단' : '상담중'}
+                  </td>
+                  <td>{record.sourceType === 'chat' ? '채팅' : '음성'}</td>
                   <td>{record.customerName}</td>
                   <td>{record.customerPhone || '-'}</td>
                   <td>{record.customerBirthDate || '-'}</td>

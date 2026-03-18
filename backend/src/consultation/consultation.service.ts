@@ -101,10 +101,21 @@ export class ConsultationService {
       return `"${raw.replace(/"/g, '""')}"`;
     };
 
+    const statusMap: Record<string, string> = {
+      collecting: '상담중',
+      submitted: '상담완료',
+      interrupted: '상담중단',
+    };
+
+    const typeMap: Record<string, string> = {
+      chat: '채팅',
+      voice: '음성',
+    };
+
     const rows = records.map((record) => [
       record.id,
-      record.status,
-      record.sourceType,
+      statusMap[record.status] || record.status,
+      typeMap[record.sourceType] || record.sourceType,
       record.customerName,
       record.customerPhone,
       record.customerBirthDate,

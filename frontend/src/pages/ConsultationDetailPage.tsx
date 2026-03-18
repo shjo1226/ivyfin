@@ -92,7 +92,8 @@ const ConsultationDetailPage: React.FC = () => {
         </div>
         <div className="header-right">
           <span className={`badge badge-status-${record.status.toLowerCase()}`}>
-            {record.status === 'submitted' ? '접수완료' : '진행중'}
+            {record.status === 'submitted' ? '접수완료' : 
+             record.status === 'interrupted' ? '상담중단' : '상담중'}
           </span>
           <span className={`badge badge-type-${record.sourceType.toLowerCase()}`}>
             {record.sourceType === 'chat' ? '채팅상담' : '전화상담'}
