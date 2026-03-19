@@ -86,7 +86,9 @@ export class VoiceService {
       }
       : undefined;
 
-    this.logger.log(`Connecting Gemini Live with model: ${this.modelName}`);
+    let isInterrupted = false;
+    const sessionStartTime = Date.now();
+    const ECHO_PROTECTION_MS = 5000;
 
     const session = await this.genAI.live.connect({
       model: this.modelName,
@@ -95,10 +97,22 @@ export class VoiceService {
           const content = message.serverContent;
 
           if (content?.interrupted) {
-            onInterrupted();
+            const timeSinceStart = Date.now() - sessionStartTime;
+            if (timeSinceStart < ECHO_PROTECTION_MS) {
+              this.logger.warn(
+                `🛡️ [Echo Protection] Ignored interruption during greeting phase (${timeSinceStart}ms < ${ECHO_PROTECTION_MS}ms)`,
+              );
+            } else {
+              isInterrupted = true;
+              onInterrupted();
+            }
           }
 
-          if (content?.modelTurn?.parts) {
+          if (content?.turnComplete) {
+            isInterrupted = false;
+          }
+
+          if (content?.modelTurn?.parts && !isInterrupted) {
             for (const part of content.modelTurn.parts) {
               if (part.inlineData?.data) {
                 onAudio(part.inlineData.data);
@@ -119,7 +133,7 @@ export class VoiceService {
             }
           }
 
-          if (content?.outputTranscription?.text) {
+          if (content?.outputTranscription?.text && !isInterrupted) {
             const sanitizedText = this.sanitizeTranscriptText(
               content.outputTranscription.text,
             );
@@ -132,7 +146,7 @@ export class VoiceService {
             }
           }
 
-          if (message.toolCall) {
+          if (message.toolCall && !isInterrupted) {
             const functionCalls = message.toolCall.functionCalls || [];
             if (functionCalls.length > 0) {
               onToolCall(functionCalls);
