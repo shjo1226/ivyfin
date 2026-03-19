@@ -119,7 +119,7 @@ const VoicePage: React.FC = () => {
 
       const audioContext = new AudioContext({ sampleRate: 16000 });
       const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      const processor = audioContext.createScriptProcessor(2048, 1, 1);
       const mutedMonitorGain = audioContext.createGain();
       mutedMonitorGain.gain.value = 0;
 
@@ -216,6 +216,14 @@ const VoicePage: React.FC = () => {
         playbackCursorRef.current = 0;
       }
 
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.role === 'assistant') {
+          return prev.slice(0, -1);
+        }
+        return prev;
+      });
+
       setIsAiSpeaking(false);
     });
 
@@ -233,16 +241,9 @@ const VoicePage: React.FC = () => {
             ];
           }
 
-          if (data.role === 'assistant') {
-            return [
-              ...prev.slice(0, -1),
-              { ...last, text: appendTranscriptChunk(last.text, data.text) },
-            ];
-          }
-
           return [
             ...prev.slice(0, -1),
-            { ...last, text: normalized },
+            { ...last, text: appendTranscriptChunk(last.text, data.text) },
           ];
         }
 

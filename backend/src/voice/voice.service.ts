@@ -71,6 +71,7 @@ export class VoiceService {
     onAudio: (data: string) => void,
     onTranscript: (event: VoiceTranscriptEvent) => void,
     onInterrupted: () => void,
+    onTurnComplete: () => void,
     onToolCall: (functionCalls: any[]) => void,
     onError: (error: any) => void,
     onClose: () => void,
@@ -110,6 +111,7 @@ export class VoiceService {
 
           if (content?.turnComplete) {
             isInterrupted = false;
+            onTurnComplete();
           }
 
           if (content?.modelTurn?.parts && !isInterrupted) {
@@ -128,7 +130,7 @@ export class VoiceService {
               onTranscript({
                 role: 'user',
                 text: sanitizedText,
-                replace: true,
+                replace: false,
               });
             }
           }
@@ -176,11 +178,11 @@ export class VoiceService {
         realtimeInputConfig: {
           automaticActivityDetection: {
             disabled: false,
-            silenceDurationMs: 800,
+            silenceDurationMs: 1000,
             prefixPaddingMs: 300,
             startOfSpeechSensitivity:
-              StartSensitivity.START_SENSITIVITY_UNSPECIFIED,
-            endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+              StartSensitivity.START_SENSITIVITY_HIGH,
+            endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_HIGH,
           },
           activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
           turnCoverage: TurnCoverage.TURN_INCLUDES_ONLY_ACTIVITY,

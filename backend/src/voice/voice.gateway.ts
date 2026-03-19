@@ -25,6 +25,7 @@ interface VoiceSession {
   endCallFinalizeTimeout: ReturnType<typeof setTimeout> | null;
   transcripts: Array<{ role: string; content: string }>;
   suppressUserTranscriptUntil: number;
+  isEndCallPending: boolean;
 }
 
 @WebSocketGateway({
@@ -236,11 +237,32 @@ export class VoiceGateway implements OnGatewayConnection, OnGatewayDisconnect {
             voiceSession,
             'Gemini VAD detected customer interruption',
           );
+          voiceSession.isEndCallPending = false;
           client.emit('end-call-cancelled', {
             message: '고객 응답이 감지되어 통화 종료가 취소되었습니다.',
           });
           client.emit('interrupted');
           this.logger.log(`Gemini interruption detected for ${client.id}`);
+        },
+        // onTurnComplete callback
+        () => {
+          const voiceSession = this.sessions.get(client.id);
+          if (!voiceSession || !voiceSession.isEndCallPending) {
+            return;
+          }
+
+          this.logger.log(`Turn complete for ${client.id}, starting final end_call sequence`);
+          // 2초 후 통화 종료 시작, 추가 2초 지연 후 실제 종료
+          voiceSession.endCallTimeout = setTimeout(() => {
+            voiceSession.endCallFinalizeTimeout = setTimeout(async () => {
+              if (this.sessions.has(client.id)) {
+                client.emit('call-ended', {
+                  message: '통화가 종료되었습니다.',
+                });
+                await this.cleanupSession(client, 'submitted');
+              }
+            }, 2000);
+          }, 2000);
         },
         // onToolCall callback
         (functionCalls: any[]) => {
@@ -259,17 +281,7 @@ export class VoiceGateway implements OnGatewayConnection, OnGatewayDisconnect {
                   voiceSession,
                   'Scheduling a new end_call',
                 );
-                // 5초 후 통화 종료 시작, 2초 지연 후 실제 종료
-                voiceSession.endCallTimeout = setTimeout(() => {
-                  voiceSession.endCallFinalizeTimeout = setTimeout(async () => {
-                    if (this.sessions.has(client.id)) {
-                      client.emit('call-ended', {
-                        message: '통화가 종료되었습니다.',
-                      });
-                      await this.cleanupSession(client, 'submitted');
-                    }
-                  }, 2000);
-                }, 5000);
+                voiceSession.isEndCallPending = true;
               }
 
               // Send tool response back to Gemini
@@ -337,6 +349,7 @@ export class VoiceGateway implements OnGatewayConnection, OnGatewayDisconnect {
         endCallFinalizeTimeout: null,
         transcripts: [],
         suppressUserTranscriptUntil: 0,
+        isEndCallPending: false,
       });
 
       this.logger.log(`Voice client connected: ${client.id} (${user.name})`);
